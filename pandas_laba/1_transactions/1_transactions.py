@@ -1,0 +1,31 @@
+import pandas as pd
+
+def parse_sum(s):
+    # пандас не прожует не прожует пробелы и запятые
+    s = str(s).strip().replace("\xa0", "").replace(" ", "")
+    if "," in s and "." in s:
+        if s.rfind(",") > s.rfind("."):
+            s = s.replace(".", "").replace(",", ".")
+        else:
+            s = s.replace(",", "")
+    elif "," in s:
+        s = s.replace(",", ".")
+    return pd.to_numeric(s, errors="coerce")
+
+df = pd.read_csv("transactions.csv", sep=None, engine="python")
+df.columns = [c.strip() for c in df.columns]
+
+df["STATUS"] = df["STATUS"].astype(str).str.strip()
+df["CONTRACTOR"] = df["CONTRACTOR"].astype(str).str.strip()
+df["SUM"] = df["SUM"].map(parse_sum)
+
+ok = df[df["STATUS"].str.upper() == "OK"] 
+
+# 1
+print("Топ-3 крупнейших OK-платежей:")
+print(ok.nlargest(3, "SUM")[["CONTRACTOR", "SUM"]].to_string(index=False))
+print()
+
+# 2
+umbrella_total = ok.loc[ok["CONTRACTOR"].str.lower().str.contains("umbrella", na=False), "SUM"].sum()
+print(f"Полная сумма OK-платежей в Umbrella, Inc.: {umbrella_total:.2f}")
